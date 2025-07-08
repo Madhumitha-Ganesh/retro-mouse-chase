@@ -45,6 +45,7 @@
             <div class="score">Score: <span id="score">0</span></div>
             <canvas id="game" width="480" height="520"></canvas>
             <div class="score">🐭 Use Arrow Keys - Avoid the 🐱!</div>
+            <div class="score" style="font-size: 14px;">🟣Speed 🔵Invisible 🟡Freeze Cat</div>
         </div>
     </div>
 
@@ -276,6 +277,8 @@
         let level = 1;
         let powerUpActive = false;
         let powerUpTimer = 0;
+        let powerUpType = null;
+        let catFrozen = false;
         let mouse = { x: 1, y: 1, dx: 0, dy: 0 };
         let cat = { x: 22, y: 22, dx: -1, dy: 0 };
         let powerUps = [];
@@ -289,11 +292,11 @@
             "#.##.#.########.#.##.#.#",
             "#....#....##....#......#",
             "####.####.##.####.######",
-            "#..#.#..........#.#....#",
-            "#..#.#.###  ###.#.#....#",
-            "#....#.#      #.#......#",
+            "#....#..........#......#",
+            "#....#.###..###.#......#",
+            "#....#.#......#.#......#",
             "####.#.########.#.######",
-            "#..#.#..........#.#....#",
+            "#....#..........#......#",
             "####.##.######.##.######",
             "#..........##..........#",
             "#.##.#####.##.#####.##.#",
@@ -310,14 +313,14 @@
         let cheese = [];
         for (let y = 0; y < maze.length; y++) {
             for (let x = 0; x < maze[y].length; x++) {
-                if (maze[y][x] === '.' && Math.random() < 0.3) {
+                if (maze[y][x] === '.' && Math.random() < 0.5) {
                     cheese.push({ x, y });
                 }
             }
         }
 
         function spawnPowerUp() {
-            if (powerUps.length < 2 && Math.random() < 0.1) {
+            if (powerUps.length < 1 && Math.random() < 0.1) {
                 let x, y;
                 do {
                     x = Math.floor(Math.random() * 24);
@@ -338,8 +341,16 @@
             const centerY = y * CELL + CELL / 2 + 40;
 
             if (powerUpActive) {
-                ctx.fillStyle = powerUpTimer % 20 < 10 ? '#00FF00' : '#888';
-                ctx.shadowColor = '#00FF00';
+                if (powerUpType === 'speed') {
+                    ctx.fillStyle = '#FF0080';
+                    ctx.shadowColor = '#FF0080';
+                } else if (powerUpType === 'invisible') {
+                    ctx.fillStyle = powerUpTimer % 20 < 10 ? 'rgba(136,136,136,0.3)' : '#888';
+                    ctx.shadowColor = '#00FFFF';
+                } else {
+                    ctx.fillStyle = '#888';
+                    ctx.shadowColor = '#8080FF';
+                }
                 ctx.shadowBlur = 10;
             } else {
                 ctx.fillStyle = '#888';
@@ -443,7 +454,8 @@
             ctx.fillText(`Lives: ${'❤️'.repeat(lives)}`, 10, 25);
             ctx.fillText(`Level: ${level}`, 150, 25);
             if (powerUpActive) {
-                ctx.fillText(`Power: ${Math.ceil(powerUpTimer / 60)}s`, 280, 25);
+                const powerNames = {speed: 'SPEED', invisible: 'INVISIBLE', freeze: 'FREEZE'};
+                ctx.fillText(`${powerNames[powerUpType]}: ${Math.ceil(powerUpTimer / 60)}s`, 280, 25);
             }
 
             drawMouse(mouse.x, mouse.y);
@@ -502,22 +514,28 @@
             // Collect power-ups
             for (let i = powerUps.length - 1; i >= 0; i--) {
                 if (powerUps[i].x === mouse.x && powerUps[i].y === mouse.y) {
+                    powerUpType = powerUps[i].type;
                     powerUps.splice(i, 1);
                     powerUpActive = true;
                     powerUpTimer = 300;
+                    if (powerUpType === 'freeze') catFrozen = true;
                     playNote(notes.C5, 0.2);
                 }
             }
 
             if (powerUpActive) {
                 powerUpTimer--;
-                if (powerUpTimer <= 0) powerUpActive = false;
+                if (powerUpTimer <= 0) {
+                    powerUpActive = false;
+                    powerUpType = null;
+                    catFrozen = false;
+                }
             }
 
-            if (Math.random() < 0.01) spawnPowerUp();
+            if (Math.random() < 0.02) spawnPowerUp();
 
             // Cat AI - chase the mouse
-            if (Math.random() < 0.7) {
+            if (!catFrozen && Math.random() < 0.7) {
                 let dx = mouse.x > cat.x ? 1 : mouse.x < cat.x ? -1 : 0;
                 let dy = mouse.y > cat.y ? 1 : mouse.y < cat.y ? -1 : 0;
 
@@ -534,7 +552,7 @@
             }
 
             // Move cat
-            if (canMove(cat.x + cat.dx, cat.y + cat.dy)) {
+            if (!catFrozen && canMove(cat.x + cat.dx, cat.y + cat.dy)) {
                 cat.x += cat.dx;
                 cat.y += cat.dy;
 
@@ -565,7 +583,7 @@
             }
 
             // Check if cat caught mouse
-            if (cat.x === mouse.x && cat.y === mouse.y && !powerUpActive) {
+            if (cat.x === mouse.x && cat.y === mouse.y && powerUpType !== 'invisible') {
                 lives--;
                 playNote(notes.C4, 0.5);
 
@@ -592,7 +610,7 @@
 
                 for (let y = 0; y < maze.length; y++) {
                     for (let x = 0; x < maze[y].length; x++) {
-                        if (maze[y][x] === '.' && Math.random() < 0.3) {
+                        if (maze[y][x] === '.' && Math.random() < 0.5) {
                             cheese.push({ x, y });
                         }
                     }
