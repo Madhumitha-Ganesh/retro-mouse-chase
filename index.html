@@ -1,21 +1,45 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Retro Cat & Mouse</title>
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #222; font-family: monospace; }
-        canvas { border: 2px solid #8B4513; }
-        .score { color: #FFD700; font-size: 20px; margin: 10px; text-align: center; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #222;
+            font-family: monospace;
+        }
+
+        canvas {
+            border: 2px solid #8B4513;
+        }
+
+        .score {
+            color: #FFD700;
+            font-size: 20px;
+            margin: 10px;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body>
     <div>
-        <div id="startScreen" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.9); padding: 30px; border-radius: 10px; border: 3px solid #FFD700;">
+        <div id="startScreen"
+            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.9); padding: 30px; border-radius: 10px; border: 3px solid #FFD700;">
             <h1 style="color: #FFD700; margin-bottom: 20px; font-size: 32px;">🐱 CAT & MOUSE 🐭</h1>
             <p style="color: #FFF; margin-bottom: 20px; font-size: 18px;">Collect all cheese while avoiding the cat!</p>
-            <button id="startBtn" style="padding: 15px 30px; font-size: 20px; background: #FFD700; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🎮 START GAME</button>
+            <button id="startBtn"
+                style="padding: 15px 30px; font-size: 20px; background: #FFD700; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🎮
+                START GAME</button>
             <br><br>
-            <button id="musicBtn" style="padding: 8px 16px; background: #32CD32; color: white; border: none; border-radius: 5px; cursor: pointer;">🔇 Music OFF</button>
+            <button id="musicBtn"
+                style="padding: 8px 16px; background: #32CD32; color: white; border: none; border-radius: 5px; cursor: pointer;">🔇
+                Music OFF</button>
         </div>
         <div id="gameUI" style="display: none;">
             <div class="score">Score: <span id="score">0</span></div>
@@ -30,12 +54,12 @@
         let musicPlaying = true;
         let musicInterval;
         let gameStarted = false;
-        
+
         const notes = {
             C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
             C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99
         };
-        
+
         // Intense chase music - running/chasing theme
         const chaseTheme = [
             notes.G4, notes.G4, notes.A4, notes.B4, notes.C5, notes.B4, notes.A4, notes.G4,
@@ -43,103 +67,103 @@
             notes.E4, notes.E4, notes.F4, notes.G4, notes.A4, notes.G4, notes.F4, notes.E4,
             notes.D4, notes.E4, notes.F4, notes.G4, notes.A4, notes.B4, notes.C5, notes.D5
         ];
-        
+
         const bassLine = [
             notes.C4, notes.C4, notes.F4, notes.F4, notes.G4, notes.G4, notes.C4, notes.C4,
             notes.D4, notes.D4, notes.G4, notes.G4, notes.A4, notes.A4, notes.D4, notes.D4
         ];
-        
+
         let melodyIndex = 0;
         let bassIndex = 0;
-        
+
         function playNote(frequency, duration = 0.15) {
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            
+
             oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
             oscillator.type = 'square';
-            
+
             gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            
+
             oscillator.start(audioCtx.currentTime);
             oscillator.stop(audioCtx.currentTime + duration);
         }
-        
+
         function playCrunchSound() {
             const crunchFreqs = [800, 600, 400, 300, 500, 700];
-            
+
             crunchFreqs.forEach((freq, i) => {
                 setTimeout(() => {
                     const crunch = audioCtx.createOscillator();
                     const crunchGain = audioCtx.createGain();
                     const filter = audioCtx.createBiquadFilter();
-                    
+
                     crunch.connect(filter);
                     filter.connect(crunchGain);
                     crunchGain.connect(audioCtx.destination);
-                    
+
                     crunch.frequency.setValueAtTime(freq + Math.random() * 100, audioCtx.currentTime);
                     crunch.type = 'sawtooth';
-                    
+
                     filter.type = 'highpass';
                     filter.frequency.setValueAtTime(200, audioCtx.currentTime);
-                    
+
                     crunchGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                     crunchGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                    
+
                     crunch.start(audioCtx.currentTime);
                     crunch.stop(audioCtx.currentTime + 0.05);
                 }, i * 20);
             });
         }
-        
+
         function playChaseMusic() {
             if (!musicPlaying) return;
-            
+
             // Play melody note
             const melodyOsc = audioCtx.createOscillator();
             const melodyGain = audioCtx.createGain();
             melodyOsc.connect(melodyGain);
             melodyGain.connect(audioCtx.destination);
-            
+
             melodyOsc.frequency.setValueAtTime(chaseTheme[melodyIndex], audioCtx.currentTime);
             melodyOsc.type = 'square';
             melodyGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
             melodyGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            
+
             melodyOsc.start(audioCtx.currentTime);
             melodyOsc.stop(audioCtx.currentTime + 0.1);
-            
+
             // Play bass note (every other beat)
             if (melodyIndex % 2 === 0) {
                 const bassOsc = audioCtx.createOscillator();
                 const bassGain = audioCtx.createGain();
                 bassOsc.connect(bassGain);
                 bassGain.connect(audioCtx.destination);
-                
+
                 bassOsc.frequency.setValueAtTime(bassLine[bassIndex], audioCtx.currentTime);
                 bassOsc.type = 'triangle';
                 bassGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
                 bassGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-                
+
                 bassOsc.start(audioCtx.currentTime);
                 bassOsc.stop(audioCtx.currentTime + 0.15);
-                
+
                 bassIndex = (bassIndex + 1) % bassLine.length;
             }
-            
+
             melodyIndex = (melodyIndex + 1) % chaseTheme.length;
         }
-        
+
         function startMusic() {
             if (musicInterval) return;
             musicInterval = setInterval(playChaseMusic, 120);
         }
-        
+
         function stopMusic() {
             musicPlaying = false;
             if (musicInterval) {
@@ -147,7 +171,7 @@
                 musicInterval = null;
             }
         }
-        
+
         // Auto-start music
         window.addEventListener('click', () => {
             if (audioCtx.state === 'suspended') {
@@ -157,12 +181,12 @@
                 });
             }
         }, { once: true });
-        
+
         document.getElementById('startBtn').addEventListener('click', () => {
             gameStarted = true;
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameUI').style.display = 'block';
-            
+
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume().then(() => {
                     if (musicPlaying && !musicInterval) startMusic();
@@ -173,7 +197,7 @@
                 if (!ambientInterval) startAmbientSounds();
             }
         });
-        
+
         document.getElementById('musicBtn').addEventListener('click', () => {
             const btn = document.getElementById('musicBtn');
             if (musicPlaying) {
@@ -188,10 +212,10 @@
                 if (gameStarted && !musicInterval) startMusic();
             }
         });
-        
+
         // Background ambient sounds
         let ambientInterval;
-        
+
         function playAmbientSound() {
             if (Math.random() < 0.3) {
                 // Cat meow sound
@@ -199,48 +223,48 @@
                 const meowGain = audioCtx.createGain();
                 meow.connect(meowGain);
                 meowGain.connect(audioCtx.destination);
-                
+
                 meow.frequency.setValueAtTime(300, audioCtx.currentTime);
                 meow.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.3);
                 meow.type = 'sawtooth';
-                
+
                 meowGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
                 meowGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-                
+
                 meow.start(audioCtx.currentTime);
                 meow.stop(audioCtx.currentTime + 0.3);
             }
-            
+
             if (Math.random() < 0.2) {
                 // Mouse squeak
                 const squeak = audioCtx.createOscillator();
                 const squeakGain = audioCtx.createGain();
                 squeak.connect(squeakGain);
                 squeakGain.connect(audioCtx.destination);
-                
+
                 squeak.frequency.setValueAtTime(800, audioCtx.currentTime);
                 squeak.type = 'sine';
-                
+
                 squeakGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
                 squeakGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                
+
                 squeak.start(audioCtx.currentTime);
                 squeak.stop(audioCtx.currentTime + 0.1);
             }
         }
-        
+
         function startAmbientSounds() {
             if (ambientInterval) return;
             ambientInterval = setInterval(playAmbientSound, 2000);
         }
-        
+
         function stopAmbientSounds() {
             if (ambientInterval) {
                 clearInterval(ambientInterval);
                 ambientInterval = null;
             }
         }
-        
+
         // Music ready but waits for game start
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
@@ -252,8 +276,8 @@
         let level = 1;
         let powerUpActive = false;
         let powerUpTimer = 0;
-        let mouse = {x: 1, y: 1, dx: 0, dy: 0};
-        let cat = {x: 22, y: 22, dx: -1, dy: 0};
+        let mouse = { x: 1, y: 1, dx: 0, dy: 0 };
+        let cat = { x: 22, y: 22, dx: -1, dy: 0 };
         let powerUps = [];
         let trails = [];
 
@@ -287,11 +311,11 @@
         for (let y = 0; y < maze.length; y++) {
             for (let x = 0; x < maze[y].length; x++) {
                 if (maze[y][x] === '.' && Math.random() < 0.3) {
-                    cheese.push({x, y});
+                    cheese.push({ x, y });
                 }
             }
         }
-        
+
         function spawnPowerUp() {
             if (powerUps.length < 2 && Math.random() < 0.1) {
                 let x, y;
@@ -299,7 +323,7 @@
                     x = Math.floor(Math.random() * 24);
                     y = Math.floor(Math.random() * 23);
                 } while (!canMove(x, y));
-                
+
                 const types = ['speed', 'invisible', 'freeze'];
                 powerUps.push({
                     x, y,
@@ -310,9 +334,9 @@
         }
 
         function drawMouse(x, y) {
-            const centerX = x * CELL + CELL/2;
-            const centerY = y * CELL + CELL/2 + 40;
-            
+            const centerX = x * CELL + CELL / 2;
+            const centerY = y * CELL + CELL / 2 + 40;
+
             if (powerUpActive) {
                 ctx.fillStyle = powerUpTimer % 20 < 10 ? '#00FF00' : '#888';
                 ctx.shadowColor = '#00FF00';
@@ -321,37 +345,37 @@
                 ctx.fillStyle = '#888';
                 ctx.shadowBlur = 0;
             }
-            
+
             ctx.beginPath();
             ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
             ctx.fill();
-            
+
             ctx.fillStyle = '#666';
             ctx.beginPath();
             ctx.arc(centerX - 5, centerY - 5, 3, 0, Math.PI * 2);
             ctx.arc(centerX + 5, centerY - 5, 3, 0, Math.PI * 2);
             ctx.fill();
-            
+
             ctx.strokeStyle = '#666';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(centerX, centerY + 8);
             ctx.lineTo(centerX + 8, centerY + 12);
             ctx.stroke();
-            
+
             ctx.shadowBlur = 0;
         }
 
         function drawCat(x, y) {
-            const centerX = x * CELL + CELL/2;
-            const centerY = y * CELL + CELL/2 + 40;
-            
+            const centerX = x * CELL + CELL / 2;
+            const centerY = y * CELL + CELL / 2 + 40;
+
             // Cat body
             ctx.fillStyle = '#FF6600';
             ctx.beginPath();
             ctx.arc(centerX, centerY, 9, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Cat ears (triangular)
             ctx.fillStyle = '#FF4400';
             ctx.beginPath();
@@ -384,42 +408,42 @@
             trails.forEach(trail => {
                 ctx.fillStyle = `rgba(136, 136, 136, ${trail.alpha})`;
                 ctx.beginPath();
-                ctx.arc(trail.x * CELL + CELL/2, trail.y * CELL + CELL/2 + 40, 3, 0, Math.PI * 2);
+                ctx.arc(trail.x * CELL + CELL / 2, trail.y * CELL + CELL / 2 + 40, 3, 0, Math.PI * 2);
                 ctx.fill();
                 trail.alpha -= 0.05;
             });
             trails = trails.filter(t => t.alpha > 0);
-            
+
             // Draw cheese
             cheese.forEach(c => {
                 ctx.fillStyle = '#FFD700';
                 ctx.beginPath();
-                ctx.arc(c.x * CELL + CELL/2, c.y * CELL + CELL/2 + 40, 4, 0, Math.PI * 2);
+                ctx.arc(c.x * CELL + CELL / 2, c.y * CELL + CELL / 2 + 40, 4, 0, Math.PI * 2);
                 ctx.fill();
             });
-            
+
             // Draw power-ups
             powerUps.forEach(p => {
                 p.pulse += 0.2;
                 const size = 6 + Math.sin(p.pulse) * 2;
-                const colors = {speed: '#FF0080', invisible: '#00FFFF', freeze: '#8080FF'};
-                
+                const colors = { speed: '#FF0080', invisible: '#00FFFF', freeze: '#8080FF' };
+
                 ctx.fillStyle = colors[p.type];
                 ctx.shadowColor = colors[p.type];
                 ctx.shadowBlur = 15;
                 ctx.beginPath();
-                ctx.arc(p.x * CELL + CELL/2, p.y * CELL + CELL/2 + 40, size, 0, Math.PI * 2);
+                ctx.arc(p.x * CELL + CELL / 2, p.y * CELL + CELL / 2 + 40, size, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             });
-            
+
             // Draw UI
             ctx.fillStyle = '#FFD700';
             ctx.font = '16px monospace';
             ctx.fillText(`Lives: ${'❤️'.repeat(lives)}`, 10, 25);
             ctx.fillText(`Level: ${level}`, 150, 25);
             if (powerUpActive) {
-                ctx.fillText(`Power: ${Math.ceil(powerUpTimer/60)}s`, 280, 25);
+                ctx.fillText(`Power: ${Math.ceil(powerUpTimer / 60)}s`, 280, 25);
             }
 
             drawMouse(mouse.x, mouse.y);
@@ -435,11 +459,11 @@
             // Move mouse
             let newX = mouse.x + mouse.dx;
             let newY = mouse.y + mouse.dy;
-            
+
             if (canMove(newX, newY)) {
                 mouse.x = newX;
                 mouse.y = newY;
-                
+
                 // Mouse movement sound
                 if (mouse.dx !== 0 || mouse.dy !== 0) {
                     if (Math.random() < 0.4) {
@@ -447,13 +471,13 @@
                         const stepGain = audioCtx.createGain();
                         step.connect(stepGain);
                         stepGain.connect(audioCtx.destination);
-                        
+
                         step.frequency.setValueAtTime(150, audioCtx.currentTime);
                         step.type = 'square';
-                        
+
                         stepGain.gain.setValueAtTime(0.02, audioCtx.currentTime);
                         stepGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                        
+
                         step.start(audioCtx.currentTime);
                         step.stop(audioCtx.currentTime + 0.05);
                     }
@@ -462,9 +486,9 @@
 
             // Add mouse trail
             if (mouse.dx !== 0 || mouse.dy !== 0) {
-                trails.push({x: mouse.x, y: mouse.y, alpha: 0.8});
+                trails.push({ x: mouse.x, y: mouse.y, alpha: 0.8 });
             }
-            
+
             // Collect cheese
             for (let i = cheese.length - 1; i >= 0; i--) {
                 if (cheese[i].x === mouse.x && cheese[i].y === mouse.y) {
@@ -474,7 +498,7 @@
                     playCrunchSound();
                 }
             }
-            
+
             // Collect power-ups
             for (let i = powerUps.length - 1; i >= 0; i--) {
                 if (powerUps[i].x === mouse.x && powerUps[i].y === mouse.y) {
@@ -484,19 +508,19 @@
                     playNote(notes.C5, 0.2);
                 }
             }
-            
+
             if (powerUpActive) {
                 powerUpTimer--;
                 if (powerUpTimer <= 0) powerUpActive = false;
             }
-            
+
             if (Math.random() < 0.01) spawnPowerUp();
 
             // Cat AI - chase the mouse
             if (Math.random() < 0.7) {
                 let dx = mouse.x > cat.x ? 1 : mouse.x < cat.x ? -1 : 0;
                 let dy = mouse.y > cat.y ? 1 : mouse.y < cat.y ? -1 : 0;
-                
+
                 if (canMove(cat.x + dx, cat.y + dy)) {
                     cat.dx = dx;
                     cat.dy = dy;
@@ -513,25 +537,25 @@
             if (canMove(cat.x + cat.dx, cat.y + cat.dy)) {
                 cat.x += cat.dx;
                 cat.y += cat.dy;
-                
+
                 // Cat movement sound
                 if (Math.random() < 0.3) {
                     const catStep = audioCtx.createOscillator();
                     const catStepGain = audioCtx.createGain();
                     catStep.connect(catStepGain);
                     catStepGain.connect(audioCtx.destination);
-                    
+
                     catStep.frequency.setValueAtTime(100, audioCtx.currentTime);
                     catStep.type = 'triangle';
-                    
+
                     catStepGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
                     catStepGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-                    
+
                     catStep.start(audioCtx.currentTime);
                     catStep.stop(audioCtx.currentTime + 0.08);
                 }
             } else {
-                const dirs = [{dx: 0, dy: -1}, {dx: 1, dy: 0}, {dx: 0, dy: 1}, {dx: -1, dy: 0}];
+                const dirs = [{ dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }];
                 const validDirs = dirs.filter(d => canMove(cat.x + d.dx, cat.y + d.dy));
                 if (validDirs.length > 0) {
                     const dir = validDirs[Math.floor(Math.random() * validDirs.length)];
@@ -544,7 +568,7 @@
             if (cat.x === mouse.x && cat.y === mouse.y && !powerUpActive) {
                 lives--;
                 playNote(notes.C4, 0.5);
-                
+
                 if (lives <= 0) {
                     stopMusic();
                     stopAmbientSounds();
@@ -565,19 +589,19 @@
             if (cheese.length === 0) {
                 level++;
                 playNote(notes.C5, 0.3);
-                
+
                 for (let y = 0; y < maze.length; y++) {
                     for (let x = 0; x < maze[y].length; x++) {
                         if (maze[y][x] === '.' && Math.random() < 0.3) {
-                            cheese.push({x, y});
+                            cheese.push({ x, y });
                         }
                     }
                 }
-                
+
                 mouse.x = 1; mouse.y = 1;
                 cat.x = 22; cat.y = 22;
                 powerUps = [];
-                
+
                 if (level > 5) {
                     stopMusic();
                     setTimeout(() => {
@@ -591,12 +615,11 @@
 
         document.addEventListener('keydown', e => {
             if (!gameStarted) return;
-            const speed = powerUpActive ? 2 : 1;
-            switch(e.key) {
-                case 'ArrowUp': mouse.dx = 0; mouse.dy = -speed; break;
-                case 'ArrowDown': mouse.dx = 0; mouse.dy = speed; break;
-                case 'ArrowLeft': mouse.dx = -speed; mouse.dy = 0; break;
-                case 'ArrowRight': mouse.dx = speed; mouse.dy = 0; break;
+            switch (e.key) {
+                case 'ArrowUp': mouse.dx = 0; mouse.dy = -1; break;
+                case 'ArrowDown': mouse.dx = 0; mouse.dy = 1; break;
+                case 'ArrowLeft': mouse.dx = -1; mouse.dy = 0; break;
+                case 'ArrowRight': mouse.dx = 1; mouse.dy = 0; break;
             }
         });
 
@@ -604,4 +627,5 @@
         draw();
     </script>
 </body>
+
 </html>
