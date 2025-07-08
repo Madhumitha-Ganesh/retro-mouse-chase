@@ -3,7 +3,8 @@
 
 A browser-based retro-style maze game inspired by Pac-Man, built using vanilla JavaScript. In this game, you control a mouse that collects cheese while avoiding a cat. Features include power-ups, multiple levels, responsive UI, and game state management.
 
-[Live Demo](#) • [Source Code](https://github.com/Madhumitha-Ganesh/retro-mouse-chase)
+[Live Demo](https://madhumitha-ganesh.github.io/retro-mouse-chase/) 
+[Source Code](https://github.com/Madhumitha-Ganesh/retro-mouse-chase)
 
 ---
 
