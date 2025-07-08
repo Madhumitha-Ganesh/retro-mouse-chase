@@ -173,15 +173,22 @@
             }
         }
 
-        // Auto-start music
-        window.addEventListener('click', () => {
+        // Auto-start music on any interaction
+        function initAudio() {
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume().then(() => {
-                    if (!musicInterval) startMusic();
+                    if (musicPlaying && !musicInterval) startMusic();
                     if (!ambientInterval) startAmbientSounds();
                 });
+            } else {
+                if (musicPlaying && !musicInterval) startMusic();
+                if (!ambientInterval) startAmbientSounds();
             }
-        }, { once: true });
+        }
+        
+        ['click', 'keydown', 'touchstart'].forEach(event => {
+            document.addEventListener(event, initAudio, { once: true });
+        });
 
         document.getElementById('startBtn').addEventListener('click', () => {
             gameStarted = true;
